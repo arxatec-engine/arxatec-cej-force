@@ -29,6 +29,12 @@ Si aparece Radware, el bot espera hasta FORM_TIMEOUT_MS, sin recargar la página
 Puedes completar un desafío manualmente en Chrome durante esa espera.
 Al vencer el plazo, guarda un diagnóstico y termina. Un HTTP 200 de Radware
 no cuenta como formulario obtenido. HTTP 429 y errores 5xx detienen el flujo.
+Un HTTP 403 o una página Forbidden también detienen el flujo y guardan diagnóstico.
+Antes de esperar se guarda `output/acceso-inicial.*`, incluyendo una captura.
+La terminal muestra el estado, título y segundos restantes cada diez segundos.
+`unknown` indica que la página terminó de cargar pero no se reconoció el formulario.
+En un VPS sin escritorio, puedes ejecutar Chrome visible con `xvfb-run -a npm run once`.
+[Diagnóstico en VPS](docs/vps.md) explica cómo revisar esos estados y capturas.
 
 ## Resultado
 

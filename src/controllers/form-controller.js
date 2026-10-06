@@ -15,9 +15,14 @@ export class FormController {
       const response = reuse ? null
         : await page.goto(this.target.url, { waitUntil: 'domcontentloaded' });
       status = response?.status() ?? null;
-      if (status === 429 || status >= 500) {
+      if (status === 403 || status === 429 || status >= 500) {
         throw new Error(`El servidor respondió HTTP ${status}; se detuvo la navegación.`);
       }
+      const initial = await this.artifacts.save(page, 'acceso-inicial', {
+        capturedAt: new Date().toISOString(), url: page.url(),
+        title: await page.title(), httpStatus: status,
+      });
+      this.view.info(`Captura inicial del navegador: ${initial.screenshot}`);
       await this.access.wait(page, signal);
       await this.interactor.run(page, this.actions, signal);
       const forms = await this.access.wait(page, signal);

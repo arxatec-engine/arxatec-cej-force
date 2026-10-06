@@ -35,3 +35,13 @@ test('Ctrl+C cancela la espera sin otra inspección', async () => {
   const access = new FormAccess({ inspect: () => assert.fail() }, {}, null, view, options);
   await assert.rejects(access.wait({}, abort.signal), { name: 'AbortError' });
 });
+
+test('un bloqueo explícito termina antes de intentar resolver un CAPTCHA', async () => {
+  const access = new FormAccess(
+    { inspect: async () => [] },
+    { inspect: async () => ({ kind: 'blocked', title: '403 Forbidden' }) },
+    { canSolve: async () => assert.fail('El bloqueo no se resuelve con el CAPTCHA del formulario') },
+    view, options,
+  );
+  await assert.rejects(access.wait({}, new AbortController().signal), /denegó el acceso.*403 Forbidden/);
+});

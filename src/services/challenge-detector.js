@@ -4,16 +4,17 @@ export class ChallengeDetector {
     return page.evaluate(() => {
       const title = document.title;
       const text = document.body?.innerText || '';
+      if (/forbidden|access denied|request rejected|request blocked|acceso denegado/i.test(`${title} ${text}`)) {
+        return { kind: 'blocked', title };
+      }
       if (/radware/i.test(title) || /verifying your browser before proceeding/i.test(text)) {
         return { kind: 'radware', title };
       }
-      if (/access denied|request rejected|acceso denegado/i.test(`${title} ${text}`)) {
-        return { kind: 'blocked', title };
-      }
-      if (document.querySelector('.g-recaptcha, .cf-turnstile, iframe[src*="recaptcha"]')) {
+      if (document.querySelector('.g-recaptcha, .h-captcha, .cf-turnstile, '
+        + 'iframe[src*="recaptcha"], iframe[src*="hcaptcha.com"]')) {
         return { kind: 'captcha', title };
       }
-      return { kind: 'loading', title };
+      return { kind: document.readyState === 'complete' ? 'unknown' : 'loading', title };
     });
   }
 }

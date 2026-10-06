@@ -9,18 +9,26 @@ export class FormAccess {
   async wait(page, signal) {
     const deadline = Date.now() + this.options.timeoutMs;
     let previousKind;
+    let nextProgressAt = 0;
     let solverAttempted = false;
     while (Date.now() < deadline) {
       signal.throwIfAborted();
       const forms = await this.inspector.inspect(page);
       if (forms.length) return forms;
       const challenge = await this.detector.inspect(page);
-      if (challenge.kind !== previousKind) {
-        this.view.info(`Esperando el formulario. Estado: ${challenge.kind}.`);
-        if (challenge.kind !== 'loading') {
-          this.view.info('El navegador queda abierto: puedes completar el desafío manualmente.');
+      const changed = challenge.kind !== previousKind;
+      if (changed || Date.now() >= nextProgressAt) {
+        const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+        this.view.info(`Esperando el formulario. Estado: ${challenge.kind}; quedan ${remaining} s. `
+          + `Título: ${JSON.stringify(challenge.title || '(sin título)')}.`);
+        if (changed && ['radware', 'captcha'].includes(challenge.kind)) {
+          this.view.info('Desafío detectado; requiere una solución compatible o intervención en el navegador.');
         }
         previousKind = challenge.kind;
+        nextProgressAt = Date.now() + 10000;
+      }
+      if (challenge.kind === 'blocked') {
+        throw new Error(`La página denegó el acceso (${challenge.title || 'bloqueo explícito'}). Revisa el diagnóstico.`);
       }
       if (this.solver && !solverAttempted && await this.solver.canSolve(page)) {
         solverAttempted = true;

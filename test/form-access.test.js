@@ -45,3 +45,16 @@ test('un bloqueo explícito termina antes de intentar resolver un CAPTCHA', asyn
   );
   await assert.rejects(access.wait({}, new AbortController().signal), /denegó el acceso.*403 Forbidden/);
 });
+
+test('Radware con hCaptcha informa la intervención concreta y su causa al vencer el plazo', async () => {
+  const messages = [];
+  const access = new FormAccess(
+    { inspect: async () => [] },
+    { inspect: async () => ({ kind: 'radware', captcha: 'hcaptcha', title: 'Radware Captcha Page' }) },
+    { canSolve: async () => false, solve: async () => assert.fail('El OCR del CEJ no sirve para hCaptcha') },
+    { info: message => messages.push(message) }, { ...options, timeoutMs: 20 },
+  );
+  await assert.rejects(access.wait({}, new AbortController().signal), /Radware requiere completar hCaptcha/);
+  assert.ok(messages.some(message => /Estado: radware\/hcaptcha/.test(message)));
+  assert.ok(messages.some(message => /Soy humano.*Submit/.test(message)));
+});

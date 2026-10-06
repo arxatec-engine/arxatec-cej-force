@@ -24,12 +24,18 @@ import { loadIdentity } from './config/identity.js';
 import { IdentityForm } from './services/identity-form.js';
 import { IdentityValidation } from './services/identity-validation.js';
 import { IdentityController } from './controllers/identity-controller.js';
+import { ProxyBridge } from './infrastructure/proxy-bridge.js';
+import { ProxyBrowser } from './browser/proxy-browser.js';
+import { ProxyVerifier } from './services/proxy-verifier.js';
 
 /** Raíz de composición: inyecta adaptadores sin acoplar el controlador a SDKs. */
 export async function createApplication(config, view, onFailure, workflow = 'inspect') {
   const providers = {
     real: () => new RealBrowser(config.browser),
-    local: () => new LocalBrowser(config.browser, view),
+    local: () => config.browser.proxy
+      ? new ProxyBrowser(options => new LocalBrowser(options, view),
+        new ProxyBridge(config.browser.proxy, view), config.browser, view)
+      : new LocalBrowser(config.browser, view),
     cdp: () => new CdpBrowser(config.browser.cdpEndpoint, config.browser.timeoutMs),
     browserless: () => new BrowserlessBrowser(config.browser),
   };
@@ -56,5 +62,8 @@ export async function createApplication(config, view, onFailure, workflow = 'ins
     artifacts: new ArtifactRepository(config.outputDirectory, storage), view,
     data: await loadQuery(config.query.file), options: config.query,
   }) : null;
-  return { session, controller, query, heartbeat };
+  const proxyCheck = new ProxyVerifier(
+    new ArtifactRepository(config.outputDirectory, storage), view, config.proxyCheck,
+  );
+  return { session, controller, query, heartbeat, proxyCheck };
 }

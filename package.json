@@ -4,22 +4,26 @@
   "private": true,
   "type": "module",
   "description": "Bot MVC para inspeccionar el formulario público del CEJ",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22.12"
+  },
   "scripts": {
     "start": "node --env-file-if-exists=.env src/main.js",
     "once": "node --env-file-if-exists=.env src/main.js --once",
     "query": "node --env-file-if-exists=.env src/main.js --query",
+    "proxy:check": "node --env-file-if-exists=.env src/main.js --proxy-check --once",
     "test": "node --test test/*.test.js",
     "test:browser": "node --test test/browser/*.test.js",
     "check": "node scripts/check-project.js"
   },
   "dependencies": {
     "@2captcha/captcha-solver": "1.3.9",
+    "@tesseract.js-data/eng": "1.0.0",
     "chrome-launcher": "1.2.2",
+    "proxy-chain": "3.0.1",
     "puppeteer-core": "25.12.0",
     "puppeteer-real-browser": "1.4.4",
-    "tesseract.js": "7.0.0",
-    "@tesseract.js-data/eng": "1.0.0",
-    "sharp": "0.35.5"
+    "sharp": "0.35.5",
+    "tesseract.js": "7.0.0"
   }
 }

@@ -12,10 +12,12 @@ export class ChromeProcess {
   }
 
   start() {
-    const { executablePath, profileDirectory, headless, userAgent, startupUrl } = this.options;
+    const { executablePath, profileDirectory, headless, userAgent, startupUrl, proxyServer } = this.options;
     this.child = spawn(executablePath || getChromePath(), [
       `--remote-debugging-port=${this.port}`, `--user-data-dir=${profileDirectory}`,
       '--remote-debugging-address=127.0.0.1', '--no-first-run', '--no-default-browser-check',
+      ...(proxyServer ? [`--proxy-server=${proxyServer}`, '--proxy-bypass-list=<-loopback>',
+        '--disable-quic', '--disable-background-networking', '--disable-component-update'] : []),
       ...(userAgent ? [`--user-agent=${userAgent}`] : []),
       ...(headless ? ['--headless=new'] : []), startupUrl || 'about:blank',
     ], { detached: process.platform !== 'win32', stdio: ['ignore', 'ignore', 'pipe'] });

@@ -8,7 +8,8 @@ export class ChallengeDetector {
         return { kind: 'blocked', title };
       }
       if (/radware/i.test(title) || /verifying your browser before proceeding/i.test(text)) {
-        return { kind: 'radware', title };
+        const hcaptcha = Boolean(document.querySelector('.h-captcha, iframe[src*="hcaptcha.com"]'));
+        return { kind: 'radware', title, ...(hcaptcha ? { captcha: 'hcaptcha' } : {}) };
       }
       if (document.querySelector('.g-recaptcha, .h-captcha, .cf-turnstile, '
         + 'iframe[src*="recaptcha"], iframe[src*="hcaptcha.com"]')) {

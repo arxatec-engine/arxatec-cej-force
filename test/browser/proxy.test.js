@@ -65,3 +65,28 @@ test('CLI comprueba PE en Chrome, exporta el formulario y detiene el acceso si e
   assert.equal(rejected.accepted, false);
   await assert.rejects(readFile(join(environment.OUTPUT_DIRECTORY, 'formulario.json')), { code: 'ENOENT' });
 });
+
+test('CLI cierra Chrome y guarda HTTP 402 durante el arranque sin agotar la espera del formulario', async t => {
+  const fixture = await proxyFixture(t, { tunnelStatus: 402 });
+  const environment = { ...process.env, BROWSER_MODE: 'local', BROWSER_HEADLESS: 'true',
+    PROXY_URL: fixture.url, NODE_EXTRA_CA_CERTS: fixture.certificate,
+    PROFILE_DIRECTORY: join(fixture.directory, 'rejected-profile'),
+    COOKIE_FILE: join(fixture.directory, 'cookies.json'), OUTPUT_DIRECTORY: join(fixture.directory, 'rejected'),
+    TARGET_URL: 'https://cej-proxy.test/form', CAPTCHA_MODE: 'manual', ACTIONS_FILE: '',
+    BROWSER_STARTUP_DELAY_MS: '15000', NAVIGATION_TIMEOUT_MS: '15000', FORM_TIMEOUT_MS: '300000',
+  };
+  delete environment.HEADLESS;
+  const started = Date.now();
+  await assert.rejects(promisify(execFile)(process.execPath, ['src/main.js', '--once'],
+    { env: environment, timeout: 10000 }), error => {
+    assert.equal(error.code, 1);
+    assert.match(error.stderr, /proveedor proxy.*HTTP 402/);
+    assert.doesNotMatch(error.stderr, /AbortError|fixture-secret|fixture-user/);
+    return true;
+  });
+  assert.ok(Date.now() - started < 10000);
+  const record = JSON.parse(await readFile(join(environment.OUTPUT_DIRECTORY, 'proxy-error.json')));
+  assert.equal(record.httpStatus, 402);
+  assert.equal(record.code, 'PROXY_PAYMENT_REQUIRED');
+  await assert.rejects(readFile(join(environment.OUTPUT_DIRECTORY, 'formulario.json')), { code: 'ENOENT' });
+});

@@ -1,5 +1,6 @@
 import { Server, RequestError } from 'proxy-chain';
 import { Agent } from 'node:https';
+import { ProxyProviderError } from './proxy-provider-error.js';
 
 const backgroundHosts = new Set([
   'mtalk.google.com', 'update.googleapis.com', 'clients2.google.com',
@@ -8,18 +9,21 @@ const backgroundHosts = new Set([
 
 /** Autentica ante el proxy HTTP(S) mediante un puente privado en loopback. */
 export class ProxyBridge {
-  constructor(proxy, view, createAgent = options => new Agent(options)) {
+  constructor(proxy, view, createAgent = options => new Agent(options), onFailure = () => {}) {
     this.proxy = proxy;
     this.view = view;
     this.createAgent = createAgent;
+    this.onFailure = onFailure;
   }
 
   async open(signal) {
     signal?.throwIfAborted();
+    this.failure = null;
     this.httpsAgent = this.createAgent({ servername: new URL(this.proxy.url).hostname });
     this.server = new Server({
       host: '127.0.0.1', port: 0, verbose: false,
       prepareRequestFunction: ({ hostname }) => {
+        if (this.failure) throw new RequestError('Proveedor proxy no disponible.', 503);
         if (backgroundHosts.has(hostname)) throw new RequestError('Tráfico de fondo de Chrome deshabilitado.', 403);
         return {
           requestAuthentication: false, upstreamProxyUrl: this.proxy.url,
@@ -29,9 +33,12 @@ export class ProxyBridge {
       },
     });
     this.server.on('tunnelConnectFailed', ({ response, customTag }) => {
+      if (this.failure) return;
       this.view?.info(`El proveedor proxy rechazó el túnel hacia ${customTag.hostname}: HTTP ${response.statusCode}.`);
-      if (response.statusCode === 402) this.view?.info('Evomi/proveedor solicita pago: revisa el saldo y la vigencia de la prueba.');
-      if ([401, 407].includes(response.statusCode)) this.view?.info('El proveedor proxy rechazó la autenticación. Revisa PROXY_URL.');
+      if ([401, 402, 407].includes(response.statusCode)) {
+        this.failure = new ProxyProviderError(response.statusCode, customTag.hostname);
+        this.onFailure(this.failure);
+      }
     });
     this.server.on('requestFailed', () => {
       this.view?.info('Falló una petición al proveedor proxy. Revisa conexión, credenciales y saldo.');

@@ -6,7 +6,7 @@ Guarda la cadena del generador en el `.env` privado, sin subirla a Git:
 ```dotenv
 BROWSER_MODE=local
 BROWSER_HEADLESS=false
-PROXY_URL="https://proxy.example:1001:usuario:clave_country-PE_session-example1_lifetime-30"
+PROXY_URL="https://proxy.example:1001:usuario:clave_country-PE_hardsession-example1"
 PROXY_CHECK_URL=https://ip.evomi.com/
 PROXY_EXPECTED_COUNTRY=PE
 ```
@@ -14,8 +14,11 @@ PROXY_EXPECTED_COUNTRY=PE
 El ejemplo usa credenciales ficticias. Copia tu cadena completa; el host, puerto,
 usuario y contraseña deben coincidir con el generador. También admite el formato
 estándar `https://usuario:clave@proxy.example:1001`. En el generador de Evomi,
-elige Perú, Sticky Session, una sesión y 30 minutos. La ciudad es opcional.
-Si la cadena no incluye lifetime, Evomi aplica el valor predeterminado de su sesión.
+elige Perú, Sticky Session y **Hard Session**, una sesión. La ciudad es opcional.
+En la cadena, Hard Session usa `_hardsession-example1` en lugar de `_session-example1`.
+Evomi ignora lifetime en Hard Session; la sesión normal dura 30 minutos por defecto.
+Hard Session mantiene la misma IP mientras la red lo permite; no garantiza superar
+Radware. [Evomi documenta ambas modalidades](https://evomi.com/product/residential-proxies).
 
 El endpoint `/` de ip.evomi.com informa país e IP en JSON; `/s` devuelve solamente
 la IP y no sirve para verificar el país. PROXY_CHECK_URL permite otro endpoint
@@ -50,6 +53,9 @@ Cada carpeta de ejecución nueva evita confundir evidencia de intentos anteriore
 Un HTTP 402 del proveedor proxy exige revisar Statistics / Subscription: puede
 haber vencido la prueba o faltar tráfico disponible. Un 401/407 señala un rechazo
 de autenticación. Esas respuestas del proxy son distintas de un bloqueo del CEJ.
+Un rechazo 401, 402 o 407 al abrir un túnel cancela la ejecución, cierra Chrome
+y guarda `proxy-error.json`, incluso si ocurrió antes de conectar CDP. No consume
+los cinco minutos de espera del formulario ni activa una conexión directa.
 
 ## Consulta y Radware
 

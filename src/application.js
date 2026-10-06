@@ -27,6 +27,7 @@ import { IdentityController } from './controllers/identity-controller.js';
 import { ProxyBridge } from './infrastructure/proxy-bridge.js';
 import { ProxyBrowser } from './browser/proxy-browser.js';
 import { ProxyVerifier } from './services/proxy-verifier.js';
+import { ProxyFailureRepository } from './models/proxy-failure-repository.js';
 
 /** Raíz de composición: inyecta adaptadores sin acoplar el controlador a SDKs. */
 export async function createApplication(config, view, onFailure, workflow = 'inspect') {
@@ -34,7 +35,7 @@ export async function createApplication(config, view, onFailure, workflow = 'ins
     real: () => new RealBrowser(config.browser),
     local: () => config.browser.proxy
       ? new ProxyBrowser(options => new LocalBrowser(options, view),
-        new ProxyBridge(config.browser.proxy, view), config.browser, view)
+        new ProxyBridge(config.browser.proxy, view, undefined, onFailure), config.browser, view)
       : new LocalBrowser(config.browser, view),
     cdp: () => new CdpBrowser(config.browser.cdpEndpoint, config.browser.timeoutMs),
     browserless: () => new BrowserlessBrowser(config.browser),
@@ -65,5 +66,6 @@ export async function createApplication(config, view, onFailure, workflow = 'ins
   const proxyCheck = new ProxyVerifier(
     new ArtifactRepository(config.outputDirectory, storage), view, config.proxyCheck,
   );
-  return { session, controller, query, heartbeat, proxyCheck };
+  return { session, controller, query, heartbeat, proxyCheck,
+    proxyFailure: new ProxyFailureRepository(config.outputDirectory, storage) };
 }

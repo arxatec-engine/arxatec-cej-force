@@ -3,10 +3,10 @@ import { promisify } from 'node:util';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { Server } from 'proxy-chain';
+import { Server, RequestError } from 'proxy-chain';
 
 /** Proxy HTTPS de prueba con certificado confiado explícitamente y autenticación. */
-export async function proxyFixture(t) {
+export async function proxyFixture(t, options = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'cej-proxy-'));
   const certificate = join(directory, 'certificate.pem');
   const key = join(directory, 'key.pem');
@@ -15,12 +15,17 @@ export async function proxyFixture(t) {
     '-addext', 'subjectAltName=DNS:localhost']);
   const ca = await readFile(certificate);
   const requests = [];
+  const tunnels = [];
   const username = 'fixture-user';
   const password = 'fixture-secret_country-PE_session-example1';
   const server = new Server({ port: 0, serverType: 'https',
     httpsOptions: { cert: ca, key: await readFile(key) },
-    prepareRequestFunction: ({ request, username: user, password: secret, isHttp }) => {
-      if (!isHttp || user !== username || secret !== password) return { requestAuthentication: true };
+    prepareRequestFunction: ({ request, username: user, password: secret, isHttp, hostname }) => {
+      if (user !== username || secret !== password) return { requestAuthentication: true };
+      if (!isHttp) {
+        tunnels.push(hostname);
+        throw new RequestError('Fixture: túnel rechazado.', options.tunnelStatus || 501);
+      }
       requests.push(new URL(request.url));
       return { customResponseFunction: () => {
         const ip = new URL(request.url).pathname === '/ip';
@@ -33,7 +38,7 @@ export async function proxyFixture(t) {
   });
   await server.listen();
   t.after(async () => { await server.close(true); await rm(directory, { recursive: true, force: true }); });
-  return { directory, ca, certificate, requests, server,
+  return { directory, ca, certificate, requests, tunnels, server,
     url: `https://localhost:${server.port}:${username}:${password}`,
   };
 }

@@ -42,9 +42,15 @@ async function main() {
       throw abort.signal.reason;
     }
   } catch (error) {
+    const failure = abort.signal.aborted && abort.signal.reason instanceof Error
+      ? abort.signal.reason : error;
     const cancelled = abort.signal.aborted && abort.signal.reason?.name === 'AbortError';
     if (!cancelled) {
-      view.error(error);
+      try {
+        const file = await app?.proxyFailure.save(failure);
+        if (file) view.info(`Diagnóstico del proveedor proxy: ${file}`);
+      } catch (storageError) { view.error(storageError); }
+      view.error(failure);
       process.exitCode = 1;
     }
   } finally {

@@ -6,7 +6,7 @@ import { ConsoleView } from './views/console-view.js';
 /** Ciclo de vida del proceso y cierre ordenado al recibir Ctrl+C. */
 async function main() {
   const abort = new AbortController();
-  const view = new ConsoleView([process.env.BROWSERLESS_TOKEN, process.env.TWOCAPTCHA_API_KEY, process.env.PROXY_URL]);
+  const view = new ConsoleView([process.env.BROWSERLESS_TOKEN, process.env.TWOCAPTCHA_API_KEY]);
   const stop = () => abort.abort();
   process.once('SIGINT', stop);
   process.once('SIGTERM', stop);
@@ -14,20 +14,13 @@ async function main() {
   try {
     const config = loadEnvironment();
     const args = process.argv.slice(2);
-    if (args.some(argument => !['--once', '--query', '--proxy-check'].includes(argument))) {
-      throw new Error('Solo se admiten --once, --query y --proxy-check.');
+    if (args.some(argument => !['--once', '--query'].includes(argument))) {
+      throw new Error('Solo se admiten --once y --query.');
     }
-    if (args.includes('--proxy-check')) {
-      if (!config.browser.proxy) throw new Error('Configura PROXY_URL en .env para comprobar el proxy.');
-      config.browser.startupUrl = undefined;
-      config.target.reuseLoadedPage = false;
-    }
-    if (config.browser.proxy) view.secrets.push(config.browser.proxy.username, config.browser.proxy.password);
     const workflow = args.includes('--query') ? 'query' : 'inspect';
     app = await createApplication(config, view, error => abort.abort(error), workflow);
     const page = await app.session.open(abort.signal);
     app.heartbeat.start();
-    if (args.includes('--proxy-check')) await app.proxyCheck.verify(page, abort.signal);
     await app.controller.capture(page, abort.signal);
     if (app.query) {
       const result = await app.query.run(page, abort.signal);
@@ -42,15 +35,9 @@ async function main() {
       throw abort.signal.reason;
     }
   } catch (error) {
-    const failure = abort.signal.aborted && abort.signal.reason instanceof Error
-      ? abort.signal.reason : error;
     const cancelled = abort.signal.aborted && abort.signal.reason?.name === 'AbortError';
     if (!cancelled) {
-      try {
-        const file = await app?.proxyFailure.save(failure);
-        if (file) view.info(`Diagnóstico del proveedor proxy: ${file}`);
-      } catch (storageError) { view.error(storageError); }
-      view.error(failure);
+      view.error(error);
       process.exitCode = 1;
     }
   } finally {

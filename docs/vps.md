@@ -53,7 +53,3 @@ El éxito de la identidad requiere `accepted: true`, `status: "OK"` y el estado
 
 Un diagnóstico de bloqueo describe la respuesta observada. No demuestra por sí
 solo que la IP esté bloqueada permanentemente ni que cambiarla resuelva el acceso.
-
-[Configuración del proxy](proxy.md) explica PROXY_URL y `npm run proxy:check`.
-Si el estado es `radware/hcaptcha`, Radware exige «Soy humano» y Submit;
-el OCR de letras del CEJ no resuelve ese desafío y Xvfb no ofrece interacción visible.

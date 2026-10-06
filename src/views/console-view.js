@@ -11,8 +11,7 @@ export class ConsoleView {
       result = result.replaceAll(secret, '[REDACTED]');
       result = result.replaceAll(encodeURIComponent(secret), '[REDACTED]');
     }
-    return result.replace(/(https?:\/\/)[^/@\s]+@/gi, '$1[REDACTED]@')
-      .replace(/([?&](?:token|apiKey|key)=)[^&\s]+/gi, '$1[REDACTED]');
+    return result.replace(/([?&](?:token|apiKey|key)=)[^&\s]+/gi, '$1[REDACTED]');
   }
 
   info(message) {

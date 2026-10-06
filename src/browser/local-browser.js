@@ -20,10 +20,6 @@ export class LocalBrowser {
     const profile = new ProfileEndpoint(profileDirectory);
     let endpoint = await profile.find(signal);
     const reused = Boolean(endpoint);
-    if (reused && this.options.proxyServer) {
-      throw new Error('El Chrome de este perfil proxy ya está abierto. Cierra esa instancia del bot con Ctrl+C '
-        + 'antes de iniciar otra; su puente proxy pertenece a la ejecución anterior.');
-    }
     let chrome;
     let browser;
     try {

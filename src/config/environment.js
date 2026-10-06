@@ -1,5 +1,4 @@
 import { resolve } from 'node:path';
-import { loadProxy, loadProxyCheck } from './proxy.js';
 
 function integer(env, name, fallback, minimum = 1) {
   const value = Number(env[name] || fallback);
@@ -30,8 +29,6 @@ export function loadEnvironment(env = process.env) {
     throw new Error('TARGET_URL debe usar HTTP o HTTPS.');
   }
   const mode = choice(env, 'BROWSER_MODE', 'local', ['real', 'local', 'cdp', 'browserless']);
-  const proxy = loadProxy(env, mode);
-  const proxySuffix = proxy ? `.proxy-${proxy.id}` : '';
   const startupDelayMs = integer(env, 'BROWSER_STARTUP_DELAY_MS', 15000, 0);
   const warmStart = mode === 'local' && startupDelayMs > 0;
   const captchaMode = choice(env, 'CAPTCHA_MODE', 'manual', ['manual', 'ocr', '2captcha']);
@@ -50,8 +47,7 @@ export function loadEnvironment(env = process.env) {
       mode,
       headless: boolean(env, 'BROWSER_HEADLESS', false),
       executablePath: env.CHROME_PATH || '',
-      proxy,
-      profileDirectory: resolve((env.PROFILE_DIRECTORY || 'data/visible-query-profile') + proxySuffix),
+      profileDirectory: resolve(env.PROFILE_DIRECTORY || 'data/visible-query-profile'),
       startupUrl: warmStart ? targetUrl : undefined,
       startupDelayMs,
       cdpEndpoint: env.CDP_ENDPOINT,
@@ -97,8 +93,7 @@ export function loadEnvironment(env = process.env) {
       file: resolve(env.IDENTITY_FILE || 'data/consultant-identity.json'),
       timeoutMs: integer(env, 'IDENTITY_TIMEOUT_MS', 60000),
     },
-    proxyCheck: loadProxyCheck(env),
-    cookieFile: resolve((env.COOKIE_FILE || 'data/visible-query-cookies.json') + proxySuffix),
+    cookieFile: resolve(env.COOKIE_FILE || 'data/visible-query-cookies.json'),
     outputDirectory: resolve(env.OUTPUT_DIRECTORY || 'output'),
     keepBrowserOpen: boolean(env, 'KEEP_BROWSER_OPEN', true),
     heartbeatIntervalMs: integer(env, 'HEARTBEAT_INTERVAL_MS', 30000, 1000),

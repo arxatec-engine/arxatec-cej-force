@@ -8,7 +8,7 @@ de identidad y pulsa Validar. [Instrucciones de consulta](docs/query.md).
 
 ## Ejecutar
 
-Necesitas Node.js 22.12 o superior y Google Chrome instalado. En Linux, el modo
+Necesitas Node.js 22 o superior y Google Chrome instalado. En Linux, el modo
 visible necesita una sesión gráfica; para servidores configura BROWSER_HEADLESS=true.
 
 ```sh
@@ -35,11 +35,6 @@ La terminal muestra el estado, título y segundos restantes cada diez segundos.
 `unknown` indica que la página terminó de cargar pero no se reconoció el formulario.
 En un VPS sin escritorio, puedes ejecutar Chrome visible con `xvfb-run -a npm run once`.
 [Diagnóstico en VPS](docs/vps.md) explica cómo revisar esos estados y capturas.
-
-Para usar un proxy HTTP(S) autenticado, configura PROXY_URL en el `.env` privado.
-`npm run proxy:check` verifica la IP y el país de salida del propio Chrome antes
-de intentar obtener el formulario. [Configurar el proxy](docs/proxy.md) incluye
-los comandos para el equipo local y el VPS. Una IP peruana no garantiza acceso.
 
 ## Resultado
 

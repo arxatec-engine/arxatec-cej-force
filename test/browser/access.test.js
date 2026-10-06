@@ -68,10 +68,6 @@ test('Chrome: reconoce Forbidden sin respuesta de navegación y conserva evidenc
 
   await page.setContent('<title>Desafío</title><div class="h-captcha"></div>');
   assert.equal((await detector.inspect(page)).kind, 'captcha');
-  await page.setContent('<title>Radware Captcha Page</title><div class="h-captcha"></div>');
-  const radware = await detector.inspect(page);
-  assert.equal(radware.kind, 'radware');
-  assert.equal(radware.captcha, 'hcaptcha');
   await page.setContent('<title>Página inesperada</title><p>Sin formulario</p>');
   assert.equal((await detector.inspect(page)).kind, 'unknown');
 });

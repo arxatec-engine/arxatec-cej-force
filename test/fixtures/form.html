@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Formulario de prueba CEJ</title></head>
+<body>
+  <form id="challenge"><input name="captcha" aria-label="Challenge"></form>
+  <form id="busquedaFiltros" method="post">
+    <label for="district">Distrito Judicial</label>
+    <select id="district" name="district">
+      <option value="">Seleccionar</option><option value="41206">LIMA</option>
+    </select>
+    <label for="number">Número de expediente</label>
+    <input id="number" name="number" required>
+  </form>
+  <input id="parte" title="Parte">
+  <input id="codigoCaptcha" title="Código CAPTCHA">
+  <button id="consultarExpedientes" type="button">Consultar</button>
+  <iframe src="/frame" title="Búsqueda alternativa"></iframe>
+</body>
+</html>

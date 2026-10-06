@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>CEJ - Prueba de consulta</title></head>
+<body>
+<form id="busquedaFiltros">
+  <label>Distrito Judicial<select id="distritoJudicial"><option value="">Seleccionar</option><option value="05582">JUNÍN</option></select></label>
+  <select id="organoJurisdiccional"></select>
+  <select id="especialidad"></select>
+  <select id="anio"><option value="">Seleccionar</option><option value="2024">2024</option></select>
+  <input id="numeroExpediente">
+</form>
+<input id="parte"><img id="captcha_image" alt="CAPTCHA" src="/cej/Captcha.jpg">
+<input id="codigoCaptcha"><button id="btnRepro" type="button">Audio</button>
+<button id="btnReload" type="button">Renovar</button>
+<span id="codCaptchaError" style="display:none">Captcha incorrecto</span>
+<button id="consultarExpedientes" type="button">Consultar</button>
+<div id="deleteSound"></div>
+<div id="modalValidacion" style="display:none">
+  <h2 class="modal-title">VALIDACIÓN DE IDENTIDAD DEL CONSULTANTE</h2>
+  <select id="tipoDocumento"><option value="">Seleccionar</option><option value="DNI">DNI</option></select>
+  <input id="numDocumento"><div id="divCodVerificacion" style="display:none"><input id="codVerificacion"></div>
+  <input id="fechaEmision" type="date"><input id="fechaNacimiento" type="date">
+  <div id="modalExito" style="display:none">Identidad validada correctamente</div>
+  <div id="mensajeErrorValidacion" style="display:none"></div>
+  <button id="btnValidarConsultante" type="button">Validar</button>
+</div>
+<script>
+  document.querySelector('#distritoJudicial').addEventListener('change', async () => {
+    const options = await (await fetch('/instances')).text();
+    document.querySelector('#organoJurisdiccional').innerHTML = options;
+  });
+  document.querySelector('#organoJurisdiccional').addEventListener('change', async () => {
+    document.querySelector('#especialidad').innerHTML = await (await fetch('/specialties')).text();
+  });
+  document.querySelector('#btnRepro').addEventListener('click', async () => {
+    document.querySelector('#deleteSound').innerHTML = await (await fetch('/cej/xyhtml')).text();
+  });
+  document.querySelector('#consultarExpedientes').addEventListener('click', () => {
+    if (document.querySelector('#codigoCaptcha').value !== 'AB12') {
+      document.querySelector('#codCaptchaError').style.display = 'block'; return;
+    }
+    document.querySelector('#modalValidacion').style.display = 'block';
+  });
+  document.querySelector('#tipoDocumento').addEventListener('change', () => {
+    for (const id of ['numDocumento', 'codVerificacion', 'fechaEmision', 'fechaNacimiento']) {
+      document.getElementById(id).value = '';
+    }
+    document.querySelector('#divCodVerificacion').style.display = 'block';
+  });
+  document.querySelector('#btnValidarConsultante').addEventListener('click', async () => {
+    const ids = ['tipoDocumento', 'numDocumento', 'codVerificacion', 'fechaEmision', 'fechaNacimiento', 'codigoCaptcha'];
+    const body = new URLSearchParams(ids.map(id => [id, document.getElementById(id).value]));
+    const result = await (await fetch('/cej/forms/ValidarConsultante.htm', { method: 'POST', body })).json();
+    if (result.status === 'OK') {
+      document.querySelector('#modalExito').style.display = 'block';
+    } else if (result.status === 'CAPTCHA_ERROR') {
+      setTimeout(() => {
+        document.querySelector('#modalValidacion').style.display = 'none';
+        document.querySelector('#codCaptchaError').style.display = 'block';
+        document.querySelector('#captcha_image').src = '/cej/Captcha.jpg?' + Date.now();
+      }, 20);
+    } else {
+      const error = document.querySelector('#mensajeErrorValidacion');
+      error.textContent = result.message; error.style.display = 'block';
+    }
+  });
+</script>
+</body>
+</html>

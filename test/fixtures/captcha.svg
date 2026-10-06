@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="45">
+  <rect width="140" height="45" fill="#9a1413"/>
+  <text x="10" y="35" font-family="Arial" font-weight="bold" font-size="35" fill="#ffff00">AB12</text>
+  <path d="M0 23 L140 35" stroke="#000" stroke-width="1"/>
+</svg>
